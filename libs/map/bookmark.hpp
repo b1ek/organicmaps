@@ -79,6 +79,9 @@ public:
   // Whether m_data.m_properties suitable to fill "Key info" part of placepage.
   bool CanFillPlacePageMetadata() const;
 
+  // Sets a custom icon string (zoom,name;... pairs). Empty string clears it.
+  void SetCustomIcon(std::string const & icon);
+
   void Attach(kml::MarkGroupId groupId);
   void AttachCompilation(kml::MarkGroupId groupId);
   void Detach();
@@ -128,6 +131,11 @@ public:
   void SetAccessRules(kml::AccessRules accessRules);
   void SetTags(std::vector<std::string> const & tags);
   void SetCustomProperty(std::string const & key, std::string const & value);
+
+  // Category-level custom icon for bookmarks.
+  // Stored as a property: zoomLevel,symbolName;zoomLevel,symbolName;...
+  std::string GetCustomBookmarkIcon() const;
+  void SetCustomBookmarkIcon(std::string const & icon);
 
   void SetDirty(bool updateModificationDate) override;
 

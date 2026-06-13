@@ -6,6 +6,7 @@ import androidx.annotation.ColorInt;
 import androidx.annotation.IntDef;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Objects;
@@ -142,6 +143,18 @@ public final class BookmarkCategory implements Parcelable
     nativeSetCategoryTracksCustomColor(mId, color);
   }
 
+  public void setCategoryBookmarksIcon(@Nullable String icon)
+  {
+    nativeSetCategoryBookmarksIcon(mId, icon != null ? icon : "");
+  }
+
+  @Nullable
+  public String getCategoryBookmarksIcon()
+  {
+    String result = nativeGetCategoryBookmarksIcon(mId);
+    return result.isEmpty() ? null : result;
+  }
+
   public long getBookmarkIdByPosition(int positionInCategory)
   {
     return nativeGetBookmarkIdByPosition(mId, positionInCategory);
@@ -252,6 +265,9 @@ public final class BookmarkCategory implements Parcelable
 
   private static native void nativeSetCategoryBookmarksColor(long catId, @ColorInt int color);
   private static native void nativeSetCategoryTracksCustomColor(long catId, @ColorInt int color);
+  private static native void nativeSetCategoryBookmarksIcon(long catId, @NonNull String icon);
+  @NonNull
+  private static native String nativeGetCategoryBookmarksIcon(long catId);
   private static native long nativeGetBookmarkIdByPosition(long catId, int position);
   private static native long nativeGetTrackIdByPosition(long catId, int position);
 

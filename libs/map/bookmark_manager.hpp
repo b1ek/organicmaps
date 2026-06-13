@@ -160,6 +160,7 @@ public:
     void SetCategoryAccessRules(kml::MarkGroupId categoryId, kml::AccessRules accessRules);
     void SetCategoryCustomProperty(kml::MarkGroupId categoryId, std::string const & key, std::string const & value);
     void SetCategoryBookmarksColor(kml::MarkGroupId groupId, dp::Color color);
+    void SetCategoryBookmarksIcon(kml::MarkGroupId groupId, std::string const & icon);
     void SetCategoryTracksColor(kml::MarkGroupId groupId, dp::Color color);
 
     /// Removes the category from the list of categories and deletes the related file.
@@ -277,6 +278,7 @@ public:
   m2::RectD GetCategoryRect(kml::MarkGroupId categoryId, bool addIconsSize) const;
   kml::CategoryData const & GetCategoryData(kml::MarkGroupId categoryId) const;
   std::string GetCategoryCustomProperty(kml::MarkGroupId categoryId, std::string const & key) const;
+  std::string GetCategoryBookmarksIcon(kml::MarkGroupId groupId) const;
 
   kml::MarkGroupId GetCategoryId(std::string const & name) const;
 

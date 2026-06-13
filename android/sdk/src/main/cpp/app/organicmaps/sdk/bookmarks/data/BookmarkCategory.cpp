@@ -219,4 +219,18 @@ JNIEXPORT void Java_app_organicmaps_sdk_bookmarks_data_BookmarkCategory_nativeSe
   frm()->GetBookmarkManager().GetEditSession().SetCategoryTracksColor(
       static_cast<kml::MarkGroupId>(catId), dp::Color::FromARGB(static_cast<uint32_t>(color)));
 }
+
+JNIEXPORT void Java_app_organicmaps_sdk_bookmarks_data_BookmarkCategory_nativeSetCategoryBookmarksIcon(
+    JNIEnv * env, jclass, jlong catId, jstring icon)
+{
+  frm()->GetBookmarkManager().GetEditSession().SetCategoryBookmarksIcon(
+      static_cast<kml::MarkGroupId>(catId), jni::ToNativeString(env, icon));
+}
+
+JNIEXPORT jstring Java_app_organicmaps_sdk_bookmarks_data_BookmarkCategory_nativeGetCategoryBookmarksIcon(
+    JNIEnv * env, jclass, jlong catId)
+{
+  return jni::ToJavaString(env, frm()->GetBookmarkManager().GetCategoryBookmarksIcon(
+                                    static_cast<kml::MarkGroupId>(catId)));
+}
 }  // extern "C"

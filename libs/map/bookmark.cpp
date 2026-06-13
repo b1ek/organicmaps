@@ -425,6 +425,48 @@ void BookmarkCategory::SetAuthor(std::string const & name, std::string const & i
   m_data.m_authorId = id;
 }
 
+void Bookmark::SetCustomIcon(std::string const & icon)
+{
+  auto it = m_data.m_properties.find(kCustomImageProperty);
+  if (icon.empty())
+  {
+    if (it != m_data.m_properties.end())
+    {
+      m_data.m_properties.erase(it);
+      SetDirty();
+    }
+    return;
+  }
+  if (it != m_data.m_properties.end() && it->second == icon)
+    return;
+  SetDirty();
+  m_data.m_properties[kCustomImageProperty] = icon;
+}
+
+std::string BookmarkCategory::GetCustomBookmarkIcon() const
+{
+  auto const it = m_data.m_properties.find("CustomBookmarkIcon");
+  return (it != m_data.m_properties.end()) ? it->second : std::string();
+}
+
+void BookmarkCategory::SetCustomBookmarkIcon(std::string const & icon)
+{
+  auto it = m_data.m_properties.find("CustomBookmarkIcon");
+  if (icon.empty())
+  {
+    if (it != m_data.m_properties.end())
+    {
+      m_data.m_properties.erase(it);
+      SetDirty(true /* updateModificationDate */);
+    }
+    return;
+  }
+  if (it != m_data.m_properties.end() && it->second == icon)
+    return;
+  SetDirty(true /* updateModificationDate */);
+  m_data.m_properties["CustomBookmarkIcon"] = icon;
+}
+
 void BookmarkCategory::SetAccessRules(kml::AccessRules accessRules)
 {
   if (m_data.m_accessRules == accessRules)

@@ -1735,6 +1735,12 @@ std::string BookmarkManager::GetCategoryCustomProperty(kml::MarkGroupId category
   return (it != properties.end()) ? it->second : std::string();
 }
 
+std::string BookmarkManager::GetCategoryBookmarksIcon(kml::MarkGroupId groupId) const
+{
+  CHECK_THREAD_CHECKER(m_threadChecker, ());
+  return GetBmCategory(groupId)->GetCustomBookmarkIcon();
+}
+
 std::string BookmarkManager::GetCategoryFileName(kml::MarkGroupId categoryId) const
 {
   CHECK_THREAD_CHECKER(m_threadChecker, ());
@@ -3733,6 +3739,17 @@ void BookmarkManager::EditSession::SetCategoryBookmarksColor(kml::MarkGroupId gr
     if (auto * bm = m_bmManager.GetBookmarkForEdit(markId))
       bm->SetColor(color);
   m_bmManager.SetLastEditedBmColor(kml::MakeCustomBookmarkColorData(color));
+}
+
+void BookmarkManager::EditSession::SetCategoryBookmarksIcon(kml::MarkGroupId groupId,
+                                                            std::string const & icon)
+{
+  m_bmManager.GetBmCategory(groupId)->SetCustomBookmarkIcon(icon);
+
+  auto const & markIds = m_bmManager.GetUserMarkIds(groupId);
+  for (auto const markId : markIds)
+    if (auto * bm = m_bmManager.GetBookmarkForEdit(markId))
+      bm->SetCustomIcon(icon);
 }
 
 void BookmarkManager::EditSession::SetCategoryTracksColor(kml::MarkGroupId groupId, dp::Color color)
