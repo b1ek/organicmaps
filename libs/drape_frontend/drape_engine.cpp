@@ -250,6 +250,19 @@ void DrapeEngine::InvalidateUserMarks()
                                   MessagePriority::Normal);
 }
 
+void DrapeEngine::RegisterUserSymbol(std::string const & name, uint32_t width, uint32_t height,
+                                     std::vector<uint8_t> && rgbaPixels)
+{
+  if (m_textureManager)
+    m_textureManager->RegisterRuntimeSymbol(name, width, height, std::move(rgbaPixels));
+}
+
+void DrapeEngine::UnregisterUserSymbol(std::string const & name)
+{
+  if (m_textureManager)
+    m_textureManager->UnregisterRuntimeSymbol(name);
+}
+
 void DrapeEngine::UpdateBookmarksTextPlacement(UserMarksProvider * provider)
 {
   using namespace settings;

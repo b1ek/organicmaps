@@ -319,6 +319,13 @@ void TextureManager::Release()
   m_symbolTextures.clear();
   m_hatchingTextures.clear();
 
+  {
+    std::lock_guard<std::mutex> lock(m_runtimeSymbolsMutex);
+    m_runtimeSymbols.clear();
+    m_pendingRuntimeSymbols.clear();
+    m_removedRuntimeSymbols.clear();
+  }
+
   m_stipplePenTexture.reset();
   m_colorTexture.reset();
   m_trafficArrowTexture.reset();
@@ -339,6 +346,9 @@ void TextureManager::Release()
 
 bool TextureManager::UpdateDynamicTextures(ref_ptr<dp::GraphicsContext> context)
 {
+  // Always process pending runtime symbols, even when m_nothingToUpload is set.
+  ProcessPendingRuntimeSymbols(context);
+
   if (m_nothingToUpload.test_and_set())
   {
     auto const apiVersion = context->GetApiVersion();
@@ -647,6 +657,20 @@ std::vector<drape_ptr<HWTexture>> TextureManager::GetTexturesToCleanup()
 bool TextureManager::GetSymbolRegionSafe(std::string const & symbolName, SymbolRegion & region)
 {
   CHECK(m_isInitialized, ());
+
+  // Check runtime symbols first.
+  {
+    std::lock_guard<std::mutex> lock(m_runtimeSymbolsMutex);
+    auto it = m_runtimeSymbols.find(symbolName);
+    if (it != m_runtimeSymbols.end())
+    {
+      region.SetResourceInfo(make_ref(it->second.m_resourceInfo));
+      region.SetTexture(make_ref(it->second.m_texture));
+      region.SetTextureIndex(0);
+      return true;
+    }
+  }
+
   for (size_t i = 0; i < m_symbolTextures.size(); ++i)
   {
     ref_ptr<SymbolsTexture> symbolsTexture = make_ref(m_symbolTextures[i]);
@@ -849,4 +873,58 @@ ref_ptr<TexturePool> TextureManager::GetTexturePool(ref_ptr<dp::GraphicsContext>
   m_pools[mode].push_back(std::move(pool));
   return poolRef;
 }
+void TextureManager::RegisterRuntimeSymbol(std::string const & name, uint32_t width, uint32_t height,
+                                         std::vector<uint8_t> && rgbaPixels)
+{
+  std::lock_guard<std::mutex> lock(m_runtimeSymbolsMutex);
+  // Remove any pending removal for this name.
+  m_removedRuntimeSymbols.erase(
+      std::remove(m_removedRuntimeSymbols.begin(), m_removedRuntimeSymbols.end(), name),
+      m_removedRuntimeSymbols.end());
+  // Add or replace in pending queue.
+  m_pendingRuntimeSymbols.push_back({name, width, height, std::move(rgbaPixels)});
+}
+
+void TextureManager::UnregisterRuntimeSymbol(std::string const & name)
+{
+  std::lock_guard<std::mutex> lock(m_runtimeSymbolsMutex);
+  m_removedRuntimeSymbols.push_back(name);
+}
+
+void TextureManager::ProcessPendingRuntimeSymbols(ref_ptr<dp::GraphicsContext> context)
+{
+  std::lock_guard<std::mutex> lock(m_runtimeSymbolsMutex);
+
+  // Remove symbols that were unregistered.
+  for (auto const & name : m_removedRuntimeSymbols)
+    m_runtimeSymbols.erase(name);
+  m_removedRuntimeSymbols.clear();
+
+  if (m_pendingRuntimeSymbols.empty())
+    return;
+
+  CHECK(m_textureAllocator != nullptr, ());
+
+  for (auto & pending : m_pendingRuntimeSymbols)
+  {
+    // Create a dedicated texture for this symbol.
+    auto texture = make_unique_dp<StaticTexture>();
+    dp::Texture::Params params;
+    params.m_allocator = make_ref(m_textureAllocator);
+    params.m_format = dp::TextureFormat::RGBA8;
+    params.m_width = pending.m_width;
+    params.m_height = pending.m_height;
+    params.m_isMutable = false;
+
+    texture->Create(context, params, make_ref(pending.m_pixels.data()));
+
+    RuntimeSymbol sym;
+    sym.m_texture = std::move(texture);
+    // Full-texture UV rect: the entire texture is the symbol.
+    sym.m_resourceInfo = make_unique_dp<SymbolsTexture::SymbolInfo>(m2::RectF(0.0f, 0.0f, 1.0f, 1.0f));
+    m_runtimeSymbols[pending.m_name] = std::move(sym);
+  }
+  m_pendingRuntimeSymbols.clear();
+}
+
 }  // namespace dp

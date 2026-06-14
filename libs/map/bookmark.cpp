@@ -160,6 +160,19 @@ drape_ptr<df::UserPointMark::SymbolNameZoomInfo> Bookmark::GetSymbolNames() cons
 
 drape_ptr<df::UserPointMark::SymbolNameZoomInfo> Bookmark::GetCustomSymbolNames() const
 {
+  // Check for custom image data (raw RGBA pixels) first — takes priority over preset icon names.
+  auto const dataIt = m_data.m_properties.find("CustomImageData");
+  if (dataIt != m_data.m_properties.end() && !dataIt->second.empty())
+  {
+    auto symbolNames = make_unique_dp<SymbolNameZoomInfo>();
+    // Use the bookmark's group ID (or own ID if detached) to build a unique symbol name.
+    auto const id = (m_groupId != kml::kInvalidMarkGroupId) ? m_groupId : m_data.m_id;
+    std::string const symbolName = "user-icon-" + std::to_string(static_cast<uint64_t>(id));
+    // Register at zoom level 1 so it's used at all zoom levels.
+    symbolNames->emplace(1 /* zoomLevel */, symbolName);
+    return symbolNames;
+  }
+
   auto const it = m_data.m_properties.find(kCustomImageProperty);
   if (it == m_data.m_properties.end())
     return nullptr;

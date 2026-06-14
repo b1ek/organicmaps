@@ -147,6 +147,11 @@ public:
   void ClearUserMarksGroup(kml::MarkGroupId groupId);
   void ChangeVisibilityUserMarksGroup(kml::MarkGroupId groupId, bool isVisible);
   void InvalidateUserMarks();
+
+  void RegisterUserSymbol(std::string const & name, uint32_t width, uint32_t height,
+                          std::vector<uint8_t> && rgbaPixels);
+  void UnregisterUserSymbol(std::string const & name);
+
   void UpdateBookmarksTextPlacement(UserMarksProvider * provider);
   void UpdateUserMarks(UserMarksProvider * provider, bool firstTime);
 

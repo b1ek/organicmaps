@@ -128,6 +128,10 @@ public:
   bool GetSymbolRegionSafe(std::string const & symbolName, SymbolRegion & region);
   void GetSymbolRegion(std::string const & symbolName, SymbolRegion & region);
 
+  void RegisterRuntimeSymbol(std::string const & name, uint32_t width, uint32_t height,
+                             std::vector<uint8_t> && rgbaPixels);
+  void UnregisterRuntimeSymbol(std::string const & name);
+
   void GetStippleRegion(PenPatternT const & pen, StippleRegion & region);
   void GetColorRegion(Color const & color, ColorRegion & region);
   /// @return nullopt if the color atlas is full (caller should fall back to a single color).
@@ -201,6 +205,26 @@ private:
   bool m_isInitialized = false;
   std::string m_resPostfix;
   std::vector<drape_ptr<Texture>> m_symbolTextures;
+
+  struct RuntimeSymbol
+  {
+    drape_ptr<Texture> m_texture;
+    drape_ptr<Texture::ResourceInfo> m_resourceInfo;
+  };
+  mutable std::mutex m_runtimeSymbolsMutex;
+  struct PendingRuntimeSymbol
+  {
+    std::string m_name;
+    uint32_t m_width = 0;
+    uint32_t m_height = 0;
+    std::vector<uint8_t> m_pixels;
+  };
+  std::vector<PendingRuntimeSymbol> m_pendingRuntimeSymbols;
+  std::map<std::string, RuntimeSymbol, std::less<>> m_runtimeSymbols;
+  std::vector<std::string> m_removedRuntimeSymbols;
+
+  void ProcessPendingRuntimeSymbols(ref_ptr<dp::GraphicsContext> context);
+
   drape_ptr<Texture> m_stipplePenTexture;
   drape_ptr<Texture> m_colorTexture;
   std::vector<drape_ptr<Texture>> m_glyphTextures;

@@ -43,6 +43,41 @@ std::string const kLastEditedBookmarkColor = "LastBookmarkColor";
 std::string const kLastEditedBookmarkColorRGBA = "LastBookmarkColorRGBA";
 std::string const kMetadataFileName = "bm.json";
 std::string const kSortingTypeProperty = "sortingType";
+
+// Minimal base64 decoder for decoding custom bookmark icon data.
+std::vector<uint8_t> DecodeBase64(std::string const & input)
+{
+  static int8_t constexpr kDecodeTable[256] = {
+      -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+      -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+      -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,62,-1,-1,-1,63,
+      52,53,54,55,56,57,58,59,60,61,-1,-1,-1,-1,-1,-1,
+      -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,
+      15,16,17,18,19,20,21,22,23,24,25,-1,-1,-1,-1,-1,
+      -1,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,
+      41,42,43,44,45,46,47,48,49,50,51,-1,-1,-1,-1,-1
+  };
+
+  std::vector<uint8_t> result;
+  result.reserve(input.size() * 3 / 4 + 1);
+  int val = 0, valb = -8;
+  for (unsigned char c : input)
+  {
+    if (c == '=')
+      break;
+    int8_t const d = kDecodeTable[c];
+    if (d == -1)
+      continue;
+    val = (val << 6) + d;
+    valb += 6;
+    if (valb >= 0)
+    {
+      result.push_back(static_cast<uint8_t>((val >> valb) & 0xFF));
+      valb -= 8;
+    }
+  }
+  return result;
+}
 std::string const kLargestBookmarkSymbolName = "bookmark-default-m";
 size_t const kMinCommonTypesCount = 3;
 double const kNearDistanceInMeters = 20 * 1000.0;
@@ -1926,6 +1961,32 @@ void BookmarkManager::SetDrapeEngine(ref_ptr<df::DrapeEngine> engine)
     auto es = GetEditSession();
     UpdateTrackMarksMinZoom();
     RequestSymbolSizes();
+
+    // Register any custom bookmark icons that were loaded from file before the engine was ready.
+    for (auto const & [groupId, category] : m_categories)
+    {
+      auto const iconData = category->GetCustomBookmarkIconData();
+      if (!iconData.empty())
+      {
+        auto const widthStr = category->GetCategoryData().m_properties.find("CustomBookmarkIconWidth");
+        auto const heightStr = category->GetCategoryData().m_properties.find("CustomBookmarkIconHeight");
+        if (widthStr != category->GetCategoryData().m_properties.end() &&
+            heightStr != category->GetCategoryData().m_properties.end())
+        {
+          uint32_t width = 0, height = 0;
+          if (strings::to_uint(widthStr->second, width) && strings::to_uint(heightStr->second, height))
+          {
+            auto const rgbaPixels = DecodeBase64(iconData);
+            if (rgbaPixels.size() == static_cast<size_t>(width) * height * 4)
+            {
+              std::string const symbolName = "user-icon-" + std::to_string(static_cast<uint64_t>(groupId));
+              m_drapeEngine.SafeCall(&df::DrapeEngine::RegisterUserSymbol, symbolName,
+                                     width, height, std::vector<uint8_t>(rgbaPixels));
+            }
+          }
+        }
+      }
+    }
   }
 }
 
@@ -3769,6 +3830,23 @@ void BookmarkManager::EditSession::SetCategoryBookmarksIconData(kml::MarkGroupId
   for (auto const markId : markIds)
     if (auto * bm = m_bmManager.GetBookmarkForEdit(markId))
       bm->SetCustomIconData(data, width, height, format);
+
+  // Register or unregister the custom icon as a runtime texture for rendering.
+  std::string const symbolName = "user-icon-" + std::to_string(static_cast<uint64_t>(groupId));
+  if (!data.empty() && width > 0 && height > 0)
+  {
+    auto const rgbaPixels = DecodeBase64(data);
+    if (rgbaPixels.size() == static_cast<size_t>(width) * height * 4)
+    {
+      m_bmManager.m_drapeEngine.SafeCall(&df::DrapeEngine::RegisterUserSymbol, symbolName,
+                                         width, height, std::vector<uint8_t>(rgbaPixels));
+    }
+  }
+  else
+  {
+    m_bmManager.m_drapeEngine.SafeCall(&df::DrapeEngine::UnregisterUserSymbol, symbolName);
+  }
+  m_bmManager.m_drapeEngine.SafeCall(&df::DrapeEngine::InvalidateUserMarks);
 }
 
 void BookmarkManager::EditSession::SetCategoryTracksColor(kml::MarkGroupId groupId, dp::Color color)
