@@ -1741,6 +1741,12 @@ std::string BookmarkManager::GetCategoryBookmarksIcon(kml::MarkGroupId groupId) 
   return GetBmCategory(groupId)->GetCustomBookmarkIcon();
 }
 
+std::string BookmarkManager::GetCategoryBookmarksIconData(kml::MarkGroupId groupId) const
+{
+  CHECK_THREAD_CHECKER(m_threadChecker, ());
+  return GetBmCategory(groupId)->GetCustomBookmarkIconData();
+}
+
 std::string BookmarkManager::GetCategoryFileName(kml::MarkGroupId categoryId) const
 {
   CHECK_THREAD_CHECKER(m_threadChecker, ());
@@ -3750,6 +3756,19 @@ void BookmarkManager::EditSession::SetCategoryBookmarksIcon(kml::MarkGroupId gro
   for (auto const markId : markIds)
     if (auto * bm = m_bmManager.GetBookmarkForEdit(markId))
       bm->SetCustomIcon(icon);
+}
+
+void BookmarkManager::EditSession::SetCategoryBookmarksIconData(kml::MarkGroupId groupId,
+                                                                 std::string const & data,
+                                                                 uint32_t width, uint32_t height,
+                                                                 std::string const & format)
+{
+  m_bmManager.GetBmCategory(groupId)->SetCustomBookmarkIconData(data, width, height, format);
+
+  auto const & markIds = m_bmManager.GetUserMarkIds(groupId);
+  for (auto const markId : markIds)
+    if (auto * bm = m_bmManager.GetBookmarkForEdit(markId))
+      bm->SetCustomIconData(data, width, height, format);
 }
 
 void BookmarkManager::EditSession::SetCategoryTracksColor(kml::MarkGroupId groupId, dp::Color color)

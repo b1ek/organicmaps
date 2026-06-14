@@ -43,6 +43,38 @@
     <include
         android:id="@+id/color_section_divider"
         layout="@layout/bookmarks_category_shadow_divider" />
+    <LinearLayout
+        android:id="@+id/custom_icon_preview_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/margin_base"
+        android:paddingEnd="@dimen/margin_base"
+        android:paddingTop="@dimen/margin_half"
+        android:paddingBottom="@dimen/margin_half"
+        android:gravity="center_vertical"
+        android:visibility="gone">
+      <TextView
+          android:layout_width="0dp"
+          android:layout_height="wrap_content"
+          android:layout_weight="1"
+          android:text="@string/custom_icon_preview"
+          android:textAppearance="?android:textAppearanceMedium" />
+      <ImageView
+          android:id="@+id/custom_icon_preview_img"
+          android:layout_width="48dp"
+          android:layout_height="48dp"
+          android:scaleType="fitCenter"
+          android:contentDescription="@string/custom_icon_preview" />
+    </LinearLayout>
+    <TextView
+        android:id="@+id/icon_bookmarks_btn"
+        style="@style/BookmarkSettingsButton"
+        android:text="@string/change_all_bookmarks_icon" />
+    <TextView
+        android:id="@+id/custom_icon_btn"
+        style="@style/BookmarkSettingsButton"
+        android:text="@string/set_custom_bookmark_icon" />
     <TextView
         android:id="@+id/color_bookmarks_btn"
         style="@style/BookmarkSettingsButton"

@@ -7,6 +7,77 @@
 
 #include "kml/types.hpp"
 
+#include <sstream>
+
+namespace
+{
+// Mirrors the anonymous GetBookmarkIconType() in map/bookmark.cpp.
+std::string GetIconTypeName(kml::BookmarkIcon icon)
+{
+  switch (icon)
+  {
+  case kml::BookmarkIcon::None: return "default";
+  case kml::BookmarkIcon::Hotel: return "hotel";
+  case kml::BookmarkIcon::Animals: return "animals";
+  case kml::BookmarkIcon::Buddhism: return "buddhism";
+  case kml::BookmarkIcon::Building: return "building";
+  case kml::BookmarkIcon::Christianity: return "christianity";
+  case kml::BookmarkIcon::Entertainment: return "entertainment";
+  case kml::BookmarkIcon::Exchange: return "exchange";
+  case kml::BookmarkIcon::Food: return "restaurant";
+  case kml::BookmarkIcon::Gas: return "gas";
+  case kml::BookmarkIcon::Judaism: return "judaism";
+  case kml::BookmarkIcon::Medicine: return "medicine";
+  case kml::BookmarkIcon::Mountain: return "mountain";
+  case kml::BookmarkIcon::Museum: return "museum";
+  case kml::BookmarkIcon::Islam: return "islam";
+  case kml::BookmarkIcon::Park: return "park";
+  case kml::BookmarkIcon::Parking: return "parking";
+  case kml::BookmarkIcon::Shop: return "shop";
+  case kml::BookmarkIcon::Sights: return "sights";
+  case kml::BookmarkIcon::Swim: return "swim";
+  case kml::BookmarkIcon::Water: return "water";
+  case kml::BookmarkIcon::Bar: return "bar";
+  case kml::BookmarkIcon::Transport: return "transport";
+  case kml::BookmarkIcon::Viewpoint: return "viewpoint";
+  case kml::BookmarkIcon::Sport: return "sport";
+  case kml::BookmarkIcon::Pub: return "pub";
+  case kml::BookmarkIcon::Art: return "art";
+  case kml::BookmarkIcon::Bank: return "bank";
+  case kml::BookmarkIcon::Cafe: return "cafe";
+  case kml::BookmarkIcon::Pharmacy: return "pharmacy";
+  case kml::BookmarkIcon::Stadium: return "stadium";
+  case kml::BookmarkIcon::Theatre: return "theatre";
+  case kml::BookmarkIcon::Information: return "information";
+  case kml::BookmarkIcon::ChargingStation: return "charging_station";
+  case kml::BookmarkIcon::BicycleParking: return "bicycle_parking";
+  case kml::BookmarkIcon::BicycleParkingCovered: return "bicycle_parking_covered";
+  case kml::BookmarkIcon::BicycleRental: return "bicycle_rental";
+  case kml::BookmarkIcon::FastFood: return "fast_food";
+  case kml::BookmarkIcon::Airport: return "airport";
+  case kml::BookmarkIcon::Count: return {};
+  }
+  return {};
+}
+
+std::string BuildIconSymbolString(uint16_t iconIndex)
+{
+  // None = clear custom icon, bookmarks fall back to their own m_icon enum.
+  if (iconIndex >= static_cast<uint16_t>(kml::BookmarkIcon::Count) ||
+      iconIndex == static_cast<uint16_t>(kml::BookmarkIcon::None))
+    return {};
+
+  auto const typeName = GetIconTypeName(static_cast<kml::BookmarkIcon>(iconIndex));
+  // Zooms 1 and 8 use generic defaults (only default has xs/s variants in the atlas).
+  // Zoom 14 uses the specific icon overlay.
+  std::ostringstream oss;
+  oss << "1,bookmark-default-xs"
+      << ";8,bookmark-default-s"
+      << ";14,bookmark-" << typeName << "-m";
+  return oss.str();
+}
+}  // namespace
+
 namespace
 {
 inline jclass getBookmarkCategoryClass(JNIEnv * env)
@@ -231,6 +302,27 @@ JNIEXPORT jstring Java_app_organicmaps_sdk_bookmarks_data_BookmarkCategory_nativ
     JNIEnv * env, jclass, jlong catId)
 {
   return jni::ToJavaString(env, frm()->GetBookmarkManager().GetCategoryBookmarksIcon(
+                                    static_cast<kml::MarkGroupId>(catId)));
+}
+
+JNIEXPORT jstring Java_app_organicmaps_sdk_bookmarks_data_BookmarkCategory_nativeGetBookmarkIconSymbolString(
+    JNIEnv * env, jclass, jint iconIndex)
+{
+  return jni::ToJavaString(env, BuildIconSymbolString(static_cast<uint16_t>(iconIndex)));
+}
+
+JNIEXPORT void Java_app_organicmaps_sdk_bookmarks_data_BookmarkCategory_nativeSetCategoryBookmarksIconData(
+    JNIEnv * env, jclass, jlong catId, jstring data, jint width, jint height, jstring format)
+{
+  frm()->GetBookmarkManager().GetEditSession().SetCategoryBookmarksIconData(
+      static_cast<kml::MarkGroupId>(catId), jni::ToNativeString(env, data),
+      static_cast<uint32_t>(width), static_cast<uint32_t>(height), jni::ToNativeString(env, format));
+}
+
+JNIEXPORT jstring Java_app_organicmaps_sdk_bookmarks_data_BookmarkCategory_nativeGetCategoryBookmarksIconData(
+    JNIEnv * env, jclass, jlong catId)
+{
+  return jni::ToJavaString(env, frm()->GetBookmarkManager().GetCategoryBookmarksIconData(
                                     static_cast<kml::MarkGroupId>(catId)));
 }
 }  // extern "C"

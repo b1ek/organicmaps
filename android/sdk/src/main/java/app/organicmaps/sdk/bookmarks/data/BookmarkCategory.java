@@ -155,6 +155,40 @@ public final class BookmarkCategory implements Parcelable
     return result.isEmpty() ? null : result;
   }
 
+  /**
+   * Sets a custom icon from RGBA pixel data (base64-encoded).
+   * @param data base64-encoded RGBA pixel data, or empty/null to clear.
+   * @param width image width in pixels.
+   * @param height image height in pixels.
+   * @param format pixel format, e.g. "rgba" or "alpha".
+   */
+  public void setCategoryBookmarksIconData(@Nullable String data, int width, int height, @NonNull String format)
+  {
+    nativeSetCategoryBookmarksIconData(mId, data != null ? data : "", width, height, format);
+  }
+
+  /**
+   * @return base64-encoded RGBA data for the custom icon, or null if not set.
+   */
+  @Nullable
+  public String getCategoryBookmarksIconData()
+  {
+    String result = nativeGetCategoryBookmarksIconData(mId);
+    return result.isEmpty() ? null : result;
+  }
+
+  /**
+   * Builds the internal property string for a bookmark icon type.
+   * @param iconIndex index into the BookmarkIcon enum (0 = None, 1 = Hotel, ...).
+   * @return zoom-symbol pair string like "1,bookmark-hotel-xs;8,bookmark-hotel-s;14,bookmark-hotel-m",
+   *         or empty string for invalid index or None.
+   */
+  @NonNull
+  public static String getBookmarkIconSymbolString(int iconIndex)
+  {
+    return nativeGetBookmarkIconSymbolString(iconIndex);
+  }
+
   public long getBookmarkIdByPosition(int positionInCategory)
   {
     return nativeGetBookmarkIdByPosition(mId, positionInCategory);
@@ -268,6 +302,12 @@ public final class BookmarkCategory implements Parcelable
   private static native void nativeSetCategoryBookmarksIcon(long catId, @NonNull String icon);
   @NonNull
   private static native String nativeGetCategoryBookmarksIcon(long catId);
+  @NonNull
+  private static native String nativeGetBookmarkIconSymbolString(int iconIndex);
+  private static native void nativeSetCategoryBookmarksIconData(long catId, @NonNull String data,
+                                                                int width, int height, @NonNull String format);
+  @NonNull
+  private static native String nativeGetCategoryBookmarksIconData(long catId);
   private static native long nativeGetBookmarkIdByPosition(long catId, int position);
   private static native long nativeGetTrackIdByPosition(long catId, int position);
 

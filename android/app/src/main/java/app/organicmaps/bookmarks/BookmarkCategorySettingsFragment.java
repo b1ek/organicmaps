@@ -1,18 +1,27 @@
 package app.organicmaps.bookmarks;
 
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.InputFilter;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.util.Base64;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -28,10 +37,13 @@ import app.organicmaps.widget.colorpicker.ColorPickerFragment;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.util.Objects;
 
 public class BookmarkCategorySettingsFragment
-    extends BaseMwmToolbarFragment implements ColorPickerFragment.OnColorChangeListener
+    extends BaseMwmToolbarFragment implements ColorPickerFragment.OnColorChangeListener,
+                                               IconPickerFragment.OnIconSelectedListener
 {
   private static final int TEXT_LENGTH_LIMIT = 60;
   private static final String EXTRA_PICKING_TRACKS_COLOR = "picking_tracks_color";
@@ -44,6 +56,9 @@ public class BookmarkCategorySettingsFragment
   @NonNull
   private final DataChangedListener mCategoriesListener = this::onCategoriesChanged;
 
+  private final ActivityResultLauncher<String> mPickImageLauncher =
+      registerForActivityResult(new ActivityResultContracts.GetContent(), this::onImagePicked);
+
   @SuppressWarnings("NotNullFieldNotInitialized")
   @NonNull
   private BookmarkCategory mCategory;
@@ -55,6 +70,14 @@ public class BookmarkCategorySettingsFragment
   @SuppressWarnings("NotNullFieldNotInitialized")
   @NonNull
   private TextInputEditText mEditCategoryNameView;
+
+  @SuppressWarnings("NotNullFieldNotInitialized")
+  @NonNull
+  private View mIconBookmarksBtn;
+
+  @SuppressWarnings("NotNullFieldNotInitialized")
+  @NonNull
+  private View mCustomIconBtn;
 
   @SuppressWarnings("NotNullFieldNotInitialized")
   @NonNull
@@ -71,6 +94,14 @@ public class BookmarkCategorySettingsFragment
   @SuppressWarnings("NotNullFieldNotInitialized")
   @NonNull
   private View mColorSectionSpacer;
+
+  @SuppressWarnings("NotNullFieldNotInitialized")
+  @NonNull
+  private View mCustomIconPreviewRow;
+
+  @SuppressWarnings("NotNullFieldNotInitialized")
+  @NonNull
+  private ImageView mCustomIconPreviewImg;
 
   @NonNull
   private final MenuProvider mMenuProvider = new MenuProvider() {
@@ -162,13 +193,20 @@ public class BookmarkCategorySettingsFragment
     mEditDescView = root.findViewById(R.id.edit_description);
     mEditDescView.setText(mCategory.getDescription());
 
+    mIconBookmarksBtn = root.findViewById(R.id.icon_bookmarks_btn);
+    mIconBookmarksBtn.setOnClickListener(v -> showBookmarkIconPicker());
+    mCustomIconBtn = root.findViewById(R.id.custom_icon_btn);
+    mCustomIconBtn.setOnClickListener(v -> pickCustomImage());
     mColorBookmarksBtn = root.findViewById(R.id.color_bookmarks_btn);
     mColorBookmarksBtn.setOnClickListener(v -> showBookmarkColorPicker());
     mColorTracksBtn = root.findViewById(R.id.color_tracks_btn);
     mColorTracksBtn.setOnClickListener(v -> showTrackColorPicker());
     mColorSectionDivider = root.findViewById(R.id.color_section_divider);
     mColorSectionSpacer = root.findViewById(R.id.color_section_spacer);
+    mCustomIconPreviewRow = root.findViewById(R.id.custom_icon_preview_row);
+    mCustomIconPreviewImg = root.findViewById(R.id.custom_icon_preview_img);
 
+    updateCustomIconPreview();
     updateColorButtonsVisibility();
   }
 
@@ -178,6 +216,8 @@ public class BookmarkCategorySettingsFragment
     final int bookmarksCount = category.getBookmarksCount();
     final int tracksCount = category.getTracksCount();
 
+    mIconBookmarksBtn.setVisibility(bookmarksCount > 0 ? View.VISIBLE : View.GONE);
+    mCustomIconBtn.setVisibility(bookmarksCount > 0 ? View.VISIBLE : View.GONE);
     mColorBookmarksBtn.setVisibility(bookmarksCount > 0 ? View.VISIBLE : View.GONE);
     mColorTracksBtn.setVisibility(tracksCount > 0 ? View.VISIBLE : View.GONE);
 
@@ -266,6 +306,138 @@ public class BookmarkCategorySettingsFragment
   {
     mPickingTracksColor = true;
     new ColorPickerFragment().show(getChildFragmentManager(), null);
+  }
+
+  private void showBookmarkIconPicker()
+  {
+    new IconPickerFragment().show(getChildFragmentManager(), null);
+  }
+
+  private void pickCustomImage()
+  {
+    mPickImageLauncher.launch("image/*");
+  }
+
+  private void updateCustomIconPreview()
+  {
+    final String data = mCategory.getCategoryBookmarksIconData();
+    if (data == null)
+    {
+      mCustomIconPreviewRow.setVisibility(View.GONE);
+      return;
+    }
+    try
+    {
+      final byte[] rgba = Base64.decode(data, Base64.DEFAULT);
+      final int pixelCount = rgba.length / 4;
+      final int side = (int) Math.sqrt(pixelCount);
+      if (side * side * 4 != rgba.length)
+      {
+        mCustomIconPreviewRow.setVisibility(View.GONE);
+        return;
+      }
+      // Convert RGBA bytes to ARGB ints for Bitmap.
+      final int[] argb = new int[side * side];
+      for (int i = 0; i < argb.length; i++)
+      {
+        final int offset = i * 4;
+        final int r = rgba[offset] & 0xFF;
+        final int g = rgba[offset + 1] & 0xFF;
+        final int b = rgba[offset + 2] & 0xFF;
+        final int a = rgba[offset + 3] & 0xFF;
+        argb[i] = (a << 24) | (r << 16) | (g << 8) | b;
+      }
+      final Bitmap bitmap = Bitmap.createBitmap(argb, side, side, Bitmap.Config.ARGB_8888);
+      mCustomIconPreviewImg.setImageDrawable(new BitmapDrawable(getResources(), bitmap));
+      mCustomIconPreviewRow.setVisibility(View.VISIBLE);
+    }
+    catch (Exception e)
+    {
+      mCustomIconPreviewRow.setVisibility(View.GONE);
+    }
+  }
+
+  private void onImagePicked(@Nullable Uri uri)
+  {
+    if (uri == null)
+      return;
+    try
+    {
+      Bitmap bitmap = decodeSampledBitmap(uri, 32, 32);
+      if (bitmap == null)
+      {
+        Toast.makeText(requireContext(), R.string.error_failed_to_load_image, Toast.LENGTH_SHORT).show();
+        return;
+      }
+      final int width = bitmap.getWidth();
+      final int height = bitmap.getHeight();
+      final int[] pixels = new int[width * height];
+      bitmap.getPixels(pixels, 0, width, 0, 0, width, height);
+      bitmap.recycle();
+
+      // Convert ARGB ints to RGBA bytes.
+      final byte[] rgba = new byte[width * height * 4];
+      for (int i = 0; i < pixels.length; i++)
+      {
+        final int p = pixels[i];
+        final int offset = i * 4;
+        rgba[offset]     = (byte) ((p >> 16) & 0xFF);  // R
+        rgba[offset + 1] = (byte) ((p >> 8) & 0xFF);   // G
+        rgba[offset + 2] = (byte) (p & 0xFF);           // B
+        rgba[offset + 3] = (byte) ((p >> 24) & 0xFF);   // A
+      }
+
+      final String base64 = Base64.encodeToString(rgba, Base64.NO_WRAP);
+      mCategory.setCategoryBookmarksIconData(base64, width, height, "rgba");
+      updateCustomIconPreview();
+      Toast.makeText(requireContext(),
+                     getString(R.string.toast_custom_icon_set, width, height),
+                     Toast.LENGTH_SHORT).show();
+    }
+    catch (Exception e)
+    {
+      Toast.makeText(requireContext(), R.string.error_failed_to_load_image, Toast.LENGTH_SHORT).show();
+    }
+  }
+
+  /** Decodes an image URI to a bitmap no larger than maxWidth×maxHeight. */
+  @Nullable
+  private Bitmap decodeSampledBitmap(@NonNull Uri uri, int maxWidth, int maxHeight)
+  {
+    try (InputStream in = requireContext().getContentResolver().openInputStream(uri))
+    {
+      if (in == null)
+        return null;
+
+      // First decode bounds only.
+      final BitmapFactory.Options opts = new BitmapFactory.Options();
+      opts.inJustDecodeBounds = true;
+      BitmapFactory.decodeStream(in, null, opts);
+
+      // Calculate sample size.
+      int sampleSize = 1;
+      while (opts.outWidth / sampleSize > maxWidth || opts.outHeight / sampleSize > maxHeight)
+        sampleSize *= 2;
+
+      // Second decode with sample size.
+      try (InputStream in2 = requireContext().getContentResolver().openInputStream(uri))
+      {
+        final BitmapFactory.Options opts2 = new BitmapFactory.Options();
+        opts2.inSampleSize = sampleSize;
+        return BitmapFactory.decodeStream(in2, null, opts2);
+      }
+    }
+    catch (Exception e)
+    {
+      return null;
+    }
+  }
+
+  @Override
+  public void onIconSelected(int iconIndex)
+  {
+    final String iconString = BookmarkCategory.getBookmarkIconSymbolString(iconIndex);
+    mCategory.setCategoryBookmarksIcon(iconString);
   }
 
   @Override

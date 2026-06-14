@@ -443,6 +443,25 @@ void Bookmark::SetCustomIcon(std::string const & icon)
   m_data.m_properties[kCustomImageProperty] = icon;
 }
 
+void Bookmark::SetCustomIconData(std::string const & data, uint32_t width, uint32_t height,
+                                 std::string const & format)
+{
+  if (data.empty())
+  {
+    m_data.m_properties.erase("CustomImageData");
+    m_data.m_properties.erase("CustomImageWidth");
+    m_data.m_properties.erase("CustomImageHeight");
+    m_data.m_properties.erase("CustomImageFormat");
+    SetDirty();
+    return;
+  }
+  m_data.m_properties["CustomImageData"] = data;
+  m_data.m_properties["CustomImageWidth"] = std::to_string(width);
+  m_data.m_properties["CustomImageHeight"] = std::to_string(height);
+  m_data.m_properties["CustomImageFormat"] = format;
+  SetDirty();
+}
+
 std::string BookmarkCategory::GetCustomBookmarkIcon() const
 {
   auto const it = m_data.m_properties.find("CustomBookmarkIcon");
@@ -465,6 +484,31 @@ void BookmarkCategory::SetCustomBookmarkIcon(std::string const & icon)
     return;
   SetDirty(true /* updateModificationDate */);
   m_data.m_properties["CustomBookmarkIcon"] = icon;
+}
+
+std::string BookmarkCategory::GetCustomBookmarkIconData() const
+{
+  auto const it = m_data.m_properties.find("CustomBookmarkIconData");
+  return (it != m_data.m_properties.end()) ? it->second : std::string();
+}
+
+void BookmarkCategory::SetCustomBookmarkIconData(std::string const & data, uint32_t width, uint32_t height,
+                                                  std::string const & format)
+{
+  if (data.empty())
+  {
+    m_data.m_properties.erase("CustomBookmarkIconData");
+    m_data.m_properties.erase("CustomBookmarkIconWidth");
+    m_data.m_properties.erase("CustomBookmarkIconHeight");
+    m_data.m_properties.erase("CustomBookmarkIconFormat");
+    SetDirty(true /* updateModificationDate */);
+    return;
+  }
+  m_data.m_properties["CustomBookmarkIconData"] = data;
+  m_data.m_properties["CustomBookmarkIconWidth"] = std::to_string(width);
+  m_data.m_properties["CustomBookmarkIconHeight"] = std::to_string(height);
+  m_data.m_properties["CustomBookmarkIconFormat"] = format;
+  SetDirty(true /* updateModificationDate */);
 }
 
 void BookmarkCategory::SetAccessRules(kml::AccessRules accessRules)

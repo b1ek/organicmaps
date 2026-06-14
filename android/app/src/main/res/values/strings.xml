@@ -630,6 +630,13 @@
     <string name="change_all_bookmarks_color">Change color of all bookmarks</string>
     <!-- Button to change the color of all tracks in the current list -->
     <string name="change_all_tracks_color">Change color of all tracks</string>
+    <!-- Button to change the icon of all bookmarks in the current list -->
+    <string name="change_all_bookmarks_icon">Change icon of all bookmarks</string>
+    <!-- Button to set a custom image as the bookmark icon -->
+    <string name="set_custom_bookmark_icon">Set custom icon from image</string>
+    <string name="error_failed_to_load_image">Failed to load image</string>
+    <string name="toast_custom_icon_set">Custom icon set (%1$d×%2$d)</string>
+    <string name="custom_icon_preview">Custom icon</string>
     <string name="category_desc_more">…more</string>
     <!-- Menu title for exporting a file in the default KMZ format -->
     <string name="export_file">Export KMZ</string>

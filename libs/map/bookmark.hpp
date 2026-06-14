@@ -82,6 +82,10 @@ public:
   // Sets a custom icon string (zoom,name;... pairs). Empty string clears it.
   void SetCustomIcon(std::string const & icon);
 
+  // Sets a custom icon from raw RGBA pixel data (base64-encoded).
+  void SetCustomIconData(std::string const & data, uint32_t width, uint32_t height,
+                         std::string const & format);
+
   void Attach(kml::MarkGroupId groupId);
   void AttachCompilation(kml::MarkGroupId groupId);
   void Detach();
@@ -136,6 +140,11 @@ public:
   // Stored as a property: zoomLevel,symbolName;zoomLevel,symbolName;...
   std::string GetCustomBookmarkIcon() const;
   void SetCustomBookmarkIcon(std::string const & icon);
+
+  // Category-level custom icon from raw RGBA pixel data (base64-encoded).
+  std::string GetCustomBookmarkIconData() const;
+  void SetCustomBookmarkIconData(std::string const & data, uint32_t width, uint32_t height,
+                                 std::string const & format);
 
   void SetDirty(bool updateModificationDate) override;
 

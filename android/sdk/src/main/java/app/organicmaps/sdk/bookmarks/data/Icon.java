@@ -68,6 +68,23 @@ public class Icon implements Parcelable
     return mType;
   }
 
+  /** Returns the total number of available bookmark icon types. */
+  public static int getIconCount()
+  {
+    Assert.debug(sTypeIcons != null, "loadDefaultIcons should be called first");
+    return sTypeIcons != null ? sTypeIcons.length : 0;
+  }
+
+  /** Returns the drawable resource ID for the icon at the given index. */
+  @DrawableRes
+  public static int getDrawableResId(int index)
+  {
+    Assert.debug(sTypeIcons != null, "loadDefaultIcons should be called first");
+    if (sTypeIcons == null || index < 0 || index >= sTypeIcons.length)
+      return R.drawable.ic_bookmark_none;
+    return sTypeIcons[index];
+  }
+
   @Override
   public boolean equals(Object o)
   {

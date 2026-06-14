@@ -161,6 +161,8 @@ public:
     void SetCategoryCustomProperty(kml::MarkGroupId categoryId, std::string const & key, std::string const & value);
     void SetCategoryBookmarksColor(kml::MarkGroupId groupId, dp::Color color);
     void SetCategoryBookmarksIcon(kml::MarkGroupId groupId, std::string const & icon);
+    void SetCategoryBookmarksIconData(kml::MarkGroupId groupId, std::string const & data,
+                                      uint32_t width, uint32_t height, std::string const & format);
     void SetCategoryTracksColor(kml::MarkGroupId groupId, dp::Color color);
 
     /// Removes the category from the list of categories and deletes the related file.
@@ -279,6 +281,7 @@ public:
   kml::CategoryData const & GetCategoryData(kml::MarkGroupId categoryId) const;
   std::string GetCategoryCustomProperty(kml::MarkGroupId categoryId, std::string const & key) const;
   std::string GetCategoryBookmarksIcon(kml::MarkGroupId groupId) const;
+  std::string GetCategoryBookmarksIconData(kml::MarkGroupId groupId) const;
 
   kml::MarkGroupId GetCategoryId(std::string const & name) const;
 
