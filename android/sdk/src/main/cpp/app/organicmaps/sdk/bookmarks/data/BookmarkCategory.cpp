@@ -325,4 +325,18 @@ JNIEXPORT jstring Java_app_organicmaps_sdk_bookmarks_data_BookmarkCategory_nativ
   return jni::ToJavaString(env, frm()->GetBookmarkManager().GetCategoryBookmarksIconData(
                                     static_cast<kml::MarkGroupId>(catId)));
 }
+
+JNIEXPORT void Java_app_organicmaps_sdk_bookmarks_data_BookmarkCategory_nativeSetCategoryBookmarksIconMinZoom(
+    JNIEnv * env, jclass, jlong catId, jint zoom)
+{
+  frm()->GetBookmarkManager().GetEditSession().SetCategoryBookmarksIconMinZoom(
+      static_cast<kml::MarkGroupId>(catId), static_cast<int>(zoom));
+}
+
+JNIEXPORT jint Java_app_organicmaps_sdk_bookmarks_data_BookmarkCategory_nativeGetCategoryBookmarksIconMinZoom(
+    JNIEnv * env, jclass, jlong catId)
+{
+  return static_cast<jint>(frm()->GetBookmarkManager().GetCategoryBookmarksIconMinZoom(
+                                static_cast<kml::MarkGroupId>(catId)));
+}
 }  // extern "C"

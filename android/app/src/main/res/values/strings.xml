@@ -637,6 +637,7 @@
     <string name="error_failed_to_load_image">Failed to load image</string>
     <string name="toast_custom_icon_set">Custom icon set (%1$d×%2$d)</string>
     <string name="custom_icon_preview">Custom icon</string>
+    <string name="custom_icon_min_zoom">Min zoom level (1–20)</string>
     <string name="category_desc_more">…more</string>
     <!-- Menu title for exporting a file in the default KMZ format -->
     <string name="export_file">Export KMZ</string>

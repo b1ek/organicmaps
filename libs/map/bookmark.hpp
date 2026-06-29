@@ -86,6 +86,9 @@ public:
   void SetCustomIconData(std::string const & data, uint32_t width, uint32_t height,
                          std::string const & format);
 
+  // Sets a custom property on the bookmark. Cascaded from category-level settings.
+  void SetCustomProperty(std::string const & key, std::string const & value);
+
   void Attach(kml::MarkGroupId groupId);
   void AttachCompilation(kml::MarkGroupId groupId);
   void Detach();
@@ -145,6 +148,11 @@ public:
   std::string GetCustomBookmarkIconData() const;
   void SetCustomBookmarkIconData(std::string const & data, uint32_t width, uint32_t height,
                                  std::string const & format);
+
+  // Minimum zoom level at which the custom icon becomes visible (default: 14).
+  // Below this zoom, generic bookmark-default-xs/-s icons are shown instead.
+  int GetCustomBookmarkIconMinZoom() const;
+  void SetCustomBookmarkIconMinZoom(int zoom);
 
   void SetDirty(bool updateModificationDate) override;
 

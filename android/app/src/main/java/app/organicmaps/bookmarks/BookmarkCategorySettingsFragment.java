@@ -103,6 +103,14 @@ public class BookmarkCategorySettingsFragment
   @NonNull
   private ImageView mCustomIconPreviewImg;
 
+  @SuppressWarnings("NotNullFieldNotInitialized")
+  @NonNull
+  private TextInputLayout mMinZoomInput;
+
+  @SuppressWarnings("NotNullFieldNotInitialized")
+  @NonNull
+  private TextInputEditText mEditMinZoomView;
+
   @NonNull
   private final MenuProvider mMenuProvider = new MenuProvider() {
     @Override
@@ -205,6 +213,9 @@ public class BookmarkCategorySettingsFragment
     mColorSectionSpacer = root.findViewById(R.id.color_section_spacer);
     mCustomIconPreviewRow = root.findViewById(R.id.custom_icon_preview_row);
     mCustomIconPreviewImg = root.findViewById(R.id.custom_icon_preview_img);
+    mMinZoomInput = root.findViewById(R.id.custom_icon_min_zoom_input);
+    mEditMinZoomView = root.findViewById(R.id.edit_min_zoom_view);
+    mEditMinZoomView.setText(String.valueOf(mCategory.getCategoryBookmarksIconMinZoom()));
 
     updateCustomIconPreview();
     updateColorButtonsVisibility();
@@ -238,7 +249,29 @@ public class BookmarkCategorySettingsFragment
     if (isCategoryDescChanged())
       mCategory.setDescription(getEditableCategoryDesc());
 
+    saveMinZoom();
     requireActivity().finish();
+  }
+
+  private void saveMinZoom()
+  {
+    if (mMinZoomInput.getVisibility() != View.VISIBLE)
+      return;
+    final String text = mEditMinZoomView.getEditableText().toString().trim();
+    if (text.isEmpty())
+      return;
+    try
+    {
+      int zoom = Integer.parseInt(text);
+      if (zoom < 1)
+        zoom = 1;
+      if (zoom > 20)
+        zoom = 20;
+      mCategory.setCategoryBookmarksIconMinZoom(zoom);
+    }
+    catch (NumberFormatException ignored)
+    {
+    }
   }
 
   private boolean isCategoryNameChanged()
@@ -324,6 +357,7 @@ public class BookmarkCategorySettingsFragment
     if (data == null)
     {
       mCustomIconPreviewRow.setVisibility(View.GONE);
+      mMinZoomInput.setVisibility(View.GONE);
       return;
     }
     try
@@ -334,6 +368,7 @@ public class BookmarkCategorySettingsFragment
       if (side * side * 4 != rgba.length)
       {
         mCustomIconPreviewRow.setVisibility(View.GONE);
+        mMinZoomInput.setVisibility(View.GONE);
         return;
       }
       // Convert RGBA bytes to ARGB ints for Bitmap.
@@ -350,10 +385,13 @@ public class BookmarkCategorySettingsFragment
       final Bitmap bitmap = Bitmap.createBitmap(argb, side, side, Bitmap.Config.ARGB_8888);
       mCustomIconPreviewImg.setImageDrawable(new BitmapDrawable(getResources(), bitmap));
       mCustomIconPreviewRow.setVisibility(View.VISIBLE);
+      mMinZoomInput.setVisibility(View.VISIBLE);
+      mEditMinZoomView.setText(String.valueOf(mCategory.getCategoryBookmarksIconMinZoom()));
     }
     catch (Exception e)
     {
       mCustomIconPreviewRow.setVisibility(View.GONE);
+      mMinZoomInput.setVisibility(View.GONE);
     }
   }
 
@@ -389,6 +427,8 @@ public class BookmarkCategorySettingsFragment
 
       final String base64 = Base64.encodeToString(rgba, Base64.NO_WRAP);
       mCategory.setCategoryBookmarksIconData(base64, width, height, "rgba");
+      // Reset min zoom to default when a new image is picked.
+      mCategory.setCategoryBookmarksIconMinZoom(14);
       updateCustomIconPreview();
       Toast.makeText(requireContext(),
                      getString(R.string.toast_custom_icon_set, width, height),

@@ -168,8 +168,17 @@ drape_ptr<df::UserPointMark::SymbolNameZoomInfo> Bookmark::GetCustomSymbolNames(
     // Use the bookmark's group ID (or own ID if detached) to build a unique symbol name.
     auto const id = (m_groupId != kml::kInvalidMarkGroupId) ? m_groupId : m_data.m_id;
     std::string const symbolName = "user-icon-" + std::to_string(static_cast<uint64_t>(id));
-    // Register at zoom level 1 so it's used at all zoom levels.
-    symbolNames->emplace(1 /* zoomLevel */, symbolName);
+    // Read the configured minimum zoom for the custom icon (defaults to 14).
+    int minZoom = 14;
+    auto const zoomIt = m_data.m_properties.find("CustomImageMinZoom");
+    if (zoomIt != m_data.m_properties.end())
+      strings::to_int(zoomIt->second, minZoom);
+    if (minZoom < 1) minZoom = 1;
+    if (minZoom > 20) minZoom = 20;
+    // Generic bookmark icons at lower zoom levels, custom icon at minZoom+.
+    symbolNames->emplace(1 /* zoomLevel */, "bookmark-default-xs");
+    symbolNames->emplace(8 /* zoomLevel */, "bookmark-default-s");
+    symbolNames->emplace(minZoom /* zoomLevel */, symbolName);
     return symbolNames;
   }
 
@@ -475,6 +484,15 @@ void Bookmark::SetCustomIconData(std::string const & data, uint32_t width, uint3
   SetDirty();
 }
 
+void Bookmark::SetCustomProperty(std::string const & key, std::string const & value)
+{
+  auto it = m_data.m_properties.find(key);
+  if (it != m_data.m_properties.end() && it->second == value)
+    return;
+  SetDirty();
+  m_data.m_properties[key] = value;
+}
+
 std::string BookmarkCategory::GetCustomBookmarkIcon() const
 {
   auto const it = m_data.m_properties.find("CustomBookmarkIcon");
@@ -522,6 +540,37 @@ void BookmarkCategory::SetCustomBookmarkIconData(std::string const & data, uint3
   m_data.m_properties["CustomBookmarkIconHeight"] = std::to_string(height);
   m_data.m_properties["CustomBookmarkIconFormat"] = format;
   SetDirty(true /* updateModificationDate */);
+}
+
+int BookmarkCategory::GetCustomBookmarkIconMinZoom() const
+{
+  auto const it = m_data.m_properties.find("CustomBookmarkIconMinZoom");
+  if (it != m_data.m_properties.end())
+  {
+    int zoom = 0;
+    if (strings::to_int(it->second, zoom) && zoom >= 1 && zoom <= 20)
+      return zoom;
+  }
+  return 14;  // Default: same as preset bookmark icons.
+}
+
+void BookmarkCategory::SetCustomBookmarkIconMinZoom(int zoom)
+{
+  auto it = m_data.m_properties.find("CustomBookmarkIconMinZoom");
+  if (zoom == 14)
+  {
+    // 14 is the default — clear the property to save space.
+    if (it != m_data.m_properties.end())
+    {
+      m_data.m_properties.erase(it);
+      SetDirty(true /* updateModificationDate */);
+    }
+    return;
+  }
+  if (it != m_data.m_properties.end() && it->second == std::to_string(zoom))
+    return;
+  SetDirty(true /* updateModificationDate */);
+  m_data.m_properties["CustomBookmarkIconMinZoom"] = std::to_string(zoom);
 }
 
 void BookmarkCategory::SetAccessRules(kml::AccessRules accessRules)

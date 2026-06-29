@@ -1782,6 +1782,12 @@ std::string BookmarkManager::GetCategoryBookmarksIconData(kml::MarkGroupId group
   return GetBmCategory(groupId)->GetCustomBookmarkIconData();
 }
 
+int BookmarkManager::GetCategoryBookmarksIconMinZoom(kml::MarkGroupId groupId) const
+{
+  CHECK_THREAD_CHECKER(m_threadChecker, ());
+  return GetBmCategory(groupId)->GetCustomBookmarkIconMinZoom();
+}
+
 std::string BookmarkManager::GetCategoryFileName(kml::MarkGroupId categoryId) const
 {
   CHECK_THREAD_CHECKER(m_threadChecker, ());
@@ -3847,6 +3853,16 @@ void BookmarkManager::EditSession::SetCategoryBookmarksIconData(kml::MarkGroupId
     m_bmManager.m_drapeEngine.SafeCall(&df::DrapeEngine::UnregisterUserSymbol, symbolName);
   }
   m_bmManager.m_drapeEngine.SafeCall(&df::DrapeEngine::InvalidateUserMarks);
+}
+
+void BookmarkManager::EditSession::SetCategoryBookmarksIconMinZoom(kml::MarkGroupId groupId, int zoom)
+{
+  m_bmManager.GetBmCategory(groupId)->SetCustomBookmarkIconMinZoom(zoom);
+
+  auto const & markIds = m_bmManager.GetUserMarkIds(groupId);
+  for (auto const markId : markIds)
+    if (auto * bm = m_bmManager.GetBookmarkForEdit(markId))
+      bm->SetCustomProperty("CustomImageMinZoom", std::to_string(zoom));
 }
 
 void BookmarkManager::EditSession::SetCategoryTracksColor(kml::MarkGroupId groupId, dp::Color color)

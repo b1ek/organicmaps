@@ -178,6 +178,22 @@ public final class BookmarkCategory implements Parcelable
   }
 
   /**
+   * Sets the minimum zoom level at which the custom icon becomes visible.
+   * Below this zoom, generic bookmark icons are shown. Default is 14.
+   * @param zoom zoom level 1-20 (values outside this range are clamped).
+   */
+  public void setCategoryBookmarksIconMinZoom(int zoom)
+  {
+    nativeSetCategoryBookmarksIconMinZoom(mId, zoom);
+  }
+
+  /** @return the minimum zoom level for the custom icon, or 14 if not configured. */
+  public int getCategoryBookmarksIconMinZoom()
+  {
+    return nativeGetCategoryBookmarksIconMinZoom(mId);
+  }
+
+  /**
    * Builds the internal property string for a bookmark icon type.
    * @param iconIndex index into the BookmarkIcon enum (0 = None, 1 = Hotel, ...).
    * @return zoom-symbol pair string like "1,bookmark-hotel-xs;8,bookmark-hotel-s;14,bookmark-hotel-m",
@@ -308,6 +324,8 @@ public final class BookmarkCategory implements Parcelable
                                                                 int width, int height, @NonNull String format);
   @NonNull
   private static native String nativeGetCategoryBookmarksIconData(long catId);
+  private static native void nativeSetCategoryBookmarksIconMinZoom(long catId, int zoom);
+  private static native int nativeGetCategoryBookmarksIconMinZoom(long catId);
   private static native long nativeGetBookmarkIdByPosition(long catId, int position);
   private static native long nativeGetTrackIdByPosition(long catId, int position);
 

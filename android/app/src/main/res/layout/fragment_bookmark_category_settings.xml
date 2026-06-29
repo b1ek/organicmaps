@@ -43,6 +43,24 @@
     <include
         android:id="@+id/color_section_divider"
         layout="@layout/bookmarks_category_shadow_divider" />
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/custom_icon_min_zoom_input"
+        style="@style/MwmWidget.Editor.CustomTextInput"
+        android:paddingBottom="@dimen/margin_half"
+        android:paddingEnd="@dimen/margin_base"
+        android:paddingStart="@dimen/margin_base"
+        android:paddingTop="@dimen/margin_half"
+        android:visibility="gone"
+        app:hintAnimationEnabled="false">
+      <com.google.android.material.textfield.TextInputEditText
+          android:id="@+id/edit_min_zoom_view"
+          style="@style/MwmWidget.Editor.CustomTextInput"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:hint="@string/custom_icon_min_zoom"
+          android:inputType="number"
+          android:maxLength="2" />
+    </com.google.android.material.textfield.TextInputLayout>
     <LinearLayout
         android:id="@+id/custom_icon_preview_row"
         android:layout_width="match_parent"
